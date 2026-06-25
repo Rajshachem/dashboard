@@ -3970,19 +3970,22 @@ function renderMP(){
   h+='</div>';
 
   // ── TABLE HEADER ──
-  // Columns: Dept | Contractors × (Day Req | Day Actual | Night Req | Night Actual) | All Shifts Total | Diff
+  // Columns: Dept | Requirement (Day, Night) | Contractors × (Day Actual | Night Actual) | All Shifts Total | All Shifts Req | Diff
   h+='<div class="sx"><table class="mpt"><thead>';
   h+='<tr>';
   h+='<th class="dl" rowspan="3">Department</th>';
-  // 4 contractors each with 4 sub-cols
+  // Requirement column — sum of all 4 companies
+  h+='<th colspan="2" style="color:#f0f0f0;font-size:11px;text-align:center;background:rgba(50,60,80,0.7);">Requirement</th>';
+  // Order: Yogi, Paramount, Gujarat, Yash (Yash = Day only, no Night)
   var cons=[
-    {name:'Gujarat Security',color:'#4e9eff',key:'gujarat'},
-    {name:'Paramount',color:'var(--amber)',key:'paramount'},
-    {name:'Yash HK',color:'var(--teal)',key:'yash'},
-    {name:'Yogi Enterprise',color:'#c084fc',key:'yogi'}
+    {name:'Yogi Enterprise',color:'#c084fc',key:'yogi',  nightCol:true},
+    {name:'Paramount',       color:'var(--amber)',key:'paramount',nightCol:true},
+    {name:'Gujarat Security',color:'#4e9eff',key:'gujarat',nightCol:true},
+    {name:'Yash HK',         color:'var(--teal)',key:'yash',  nightCol:false}
   ];
   cons.forEach(function(c){
-    h+='<th colspan="4" style="color:'+c.color+';font-size:11px;text-align:center;background:rgba(30,37,53,0.5);">'+c.name+'</th>';
+    var span=c.nightCol?2:1;
+    h+='<th colspan="'+span+'" style="color:'+c.color+';font-size:11px;text-align:center;background:rgba(30,37,53,0.5);">'+c.name+'</th>';
   });
   h+='<th rowspan="3" style="min-width:60px;">All Shifts<br>Total</th>';
   h+='<th rowspan="3" style="min-width:50px;">All Shifts<br>Req</th>';
@@ -3990,18 +3993,20 @@ function renderMP(){
   h+='</tr>';
   // Row 2 - Day / Night
   h+='<tr>';
+  h+='<th colspan="1" style="font-size:10px;color:#f0f0f0;opacity:0.8;background:rgba(50,60,80,0.5);">Day</th>';
+  h+='<th colspan="1" style="font-size:10px;color:#f0f0f0;opacity:0.8;background:rgba(50,60,80,0.5);">Night</th>';
   cons.forEach(function(c){
-    h+='<th colspan="2" style="font-size:10px;color:'+c.color+';opacity:0.8;background:rgba(30,37,53,0.3);">Day</th>';
-    h+='<th colspan="2" style="font-size:10px;color:'+c.color+';opacity:0.8;background:rgba(30,37,53,0.3);">Night</th>';
+    h+='<th colspan="1" style="font-size:10px;color:'+c.color+';opacity:0.8;background:rgba(30,37,53,0.3);">Day</th>';
+    if(c.nightCol) h+='<th colspan="1" style="font-size:10px;color:'+c.color+';opacity:0.8;background:rgba(30,37,53,0.3);">Night</th>';
   });
   h+='</tr>';
-  // Row 3 - Req / Actual
+  // Row 3 - Req / Actual labels
   h+='<tr>';
+  h+='<th style="font-size:9px;color:var(--text3);">Req</th>';
+  h+='<th style="font-size:9px;color:var(--text3);">Req</th>';
   cons.forEach(function(c){
-    h+='<th style="font-size:9px;color:var(--text3);">Req</th>';
     h+='<th style="font-size:9px;color:'+c.color+';">Actual</th>';
-    h+='<th style="font-size:9px;color:var(--text3);">Req</th>';
-    h+='<th style="font-size:9px;color:'+c.color+';">Actual</th>';
+    if(c.nightCol) h+='<th style="font-size:9px;color:'+c.color+';">Actual</th>';
   });
   h+='</tr>';
   h+='</thead><tbody>';
@@ -4037,47 +4042,37 @@ function renderMP(){
 
     h+='<tr><td class="dn">'+dept+'</td>';
 
-    // Gujarat
+    // ── Requirement column (sum of all 4 companies Day / Night) ──
+    // In edit mode: show editable inputs that save back to all contractors proportionally
+    // In view mode: show static totals
     if(editR){
-      h+='<td><input class="msm" type="number" min="0" style="background:rgba(78,158,255,0.08);border-color:rgba(78,158,255,0.3);" id="rqd_'+dkey+'_gujarat" value="'+rGd+'" oninput="lrqNew(this)"></td>';
-    }else{h+='<td style="color:var(--text3);font-size:11px;text-align:center;">'+(rGd||'—')+'</td>';}
-    h+='<td><input class="msm" type="number" min="0" placeholder="0" id="ad_'+dkey+'_gujarat" value="'+(preD.gujarat||'')+'" oninput="updMP2()"></td>';
-    if(editR){
-      h+='<td><input class="msm" type="number" min="0" style="background:rgba(78,158,255,0.08);border-color:rgba(78,158,255,0.3);" id="rqn_'+dkey+'_gujarat" value="'+rGn+'" oninput="lrqNew(this)"></td>';
-    }else{h+='<td style="color:var(--text3);font-size:11px;text-align:center;">'+(rGn||'—')+'</td>';}
-    h+='<td><input class="msm" type="number" min="0" placeholder="0" id="an_'+dkey+'_gujarat" value="'+(preN.gujarat||'')+'" oninput="updMP2()"></td>';
+      h+='<td style="background:rgba(50,60,80,0.5);">';
+      h+='<input class="msm" type="number" min="0" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);" id="rqtd_'+dkey+'" value="'+totReqD+'" oninput="lrqTotal(this)">';
+      h+='</td>';
+      h+='<td style="background:rgba(50,60,80,0.5);">';
+      h+='<input class="msm" type="number" min="0" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);" id="rqtn_'+dkey+'" value="'+totReqN+'" oninput="lrqTotal(this)">';
+      h+='</td>';
+    } else {
+      h+='<td style="color:var(--text3);font-size:11px;text-align:center;background:rgba(50,60,80,0.3);">'+(totReqD||'—')+'</td>';
+      h+='<td style="color:var(--text3);font-size:11px;text-align:center;background:rgba(50,60,80,0.3);">'+(totReqN||'—')+'</td>';
+    }
 
-    // Paramount
-    if(editR){
-      h+='<td><input class="msm" type="number" min="0" style="background:rgba(245,166,35,0.08);border-color:rgba(245,166,35,0.3);" id="rqd_'+dkey+'_paramount" value="'+rPd+'" oninput="lrqNew(this)"></td>';
-    }else{h+='<td style="color:var(--text3);font-size:11px;text-align:center;">'+(rPd||'—')+'</td>';}
-    h+='<td><input class="msm" type="number" min="0" placeholder="0" id="ad_'+dkey+'_paramount" value="'+(preD.paramount||'')+'" oninput="updMP2()"></td>';
-    if(editR){
-      h+='<td><input class="msm" type="number" min="0" style="background:rgba(245,166,35,0.08);border-color:rgba(245,166,35,0.3);" id="rqn_'+dkey+'_paramount" value="'+rPn+'" oninput="lrqNew(this)"></td>';
-    }else{h+='<td style="color:var(--text3);font-size:11px;text-align:center;">'+(rPn||'—')+'</td>';}
-    h+='<td><input class="msm" type="number" min="0" placeholder="0" id="an_'+dkey+'_paramount" value="'+(preN.paramount||'')+'" oninput="updMP2()"></td>';
-
-    // Yash
-    if(editR){
-      h+='<td><input class="msm" type="number" min="0" style="background:rgba(45,212,191,0.08);border-color:rgba(45,212,191,0.3);" id="rqd_'+dkey+'_yash" value="'+rYd+'" oninput="lrqNew(this)"></td>';
-    }else{h+='<td style="color:var(--text3);font-size:11px;text-align:center;">'+(rYd||'—')+'</td>';}
-    h+='<td><input class="msm" type="number" min="0" placeholder="0" id="ad_'+dkey+'_yash" value="'+(preD.yash||'')+'" oninput="updMP2()"></td>';
-    if(editR){
-      h+='<td><input class="msm" type="number" min="0" style="background:rgba(45,212,191,0.08);border-color:rgba(45,212,191,0.3);" id="rqn_'+dkey+'_yash" value="'+rYn+'" oninput="lrqNew(this)"></td>';
-    }else{h+='<td style="color:var(--text3);font-size:11px;text-align:center;">'+(rYn||'—')+'</td>';}
-    h+='<td><input class="msm" type="number" min="0" placeholder="0" id="an_'+dkey+'_yash" value="'+(preN.yash||'')+'" oninput="updMP2()"></td>';
-
-    // Yogi
-    if(editR){
-      h+='<td><input class="msm" type="number" min="0" style="background:rgba(192,132,252,0.08);border-color:rgba(192,132,252,0.3);" id="rqd_'+dkey+'_yogi" value="'+rYOd+'" oninput="lrqNew(this)"></td>';
-    }else{h+='<td style="color:var(--text3);font-size:11px;text-align:center;">'+(rYOd||'—')+'</td>';}
+    // ── Yogi — Day + Night ──
     h+='<td><input class="msm" type="number" min="0" placeholder="0" id="ad_'+dkey+'_yogi" value="'+(preD.yogi||'')+'" oninput="updMP2()"></td>';
-    if(editR){
-      h+='<td><input class="msm" type="number" min="0" style="background:rgba(192,132,252,0.08);border-color:rgba(192,132,252,0.3);" id="rqn_'+dkey+'_yogi" value="'+rYOn+'" oninput="lrqNew(this)"></td>';
-    }else{h+='<td style="color:var(--text3);font-size:11px;text-align:center;">'+(rYOn||'—')+'</td>';}
     h+='<td><input class="msm" type="number" min="0" placeholder="0" id="an_'+dkey+'_yogi" value="'+(preN.yogi||'')+'" oninput="updMP2()"></td>';
 
-    // Totals
+    // ── Paramount — Day + Night ──
+    h+='<td><input class="msm" type="number" min="0" placeholder="0" id="ad_'+dkey+'_paramount" value="'+(preD.paramount||'')+'" oninput="updMP2()"></td>';
+    h+='<td><input class="msm" type="number" min="0" placeholder="0" id="an_'+dkey+'_paramount" value="'+(preN.paramount||'')+'" oninput="updMP2()"></td>';
+
+    // ── Gujarat — Day + Night ──
+    h+='<td><input class="msm" type="number" min="0" placeholder="0" id="ad_'+dkey+'_gujarat" value="'+(preD.gujarat||'')+'" oninput="updMP2()"></td>';
+    h+='<td><input class="msm" type="number" min="0" placeholder="0" id="an_'+dkey+'_gujarat" value="'+(preN.gujarat||'')+'" oninput="updMP2()"></td>';
+
+    // ── Yash — Day only (no Night column) ──
+    h+='<td><input class="msm" type="number" min="0" placeholder="0" id="ad_'+dkey+'_yash" value="'+(preD.yash||'')+'" oninput="updMP2()"></td>';
+
+    // ── Totals ──
     h+='<td class="tc" id="tot_'+dkey+'">'+(totAct||'—')+'</td>';
     h+='<td class="rc" id="tr_'+dkey+'">'+(totReq||'—')+'</td>';
     h+='<td class="'+dc+'" id="dif_'+dkey+'">'+(totReq>0||totAct>0?diff:'—')+'</td>';
@@ -4089,10 +4084,12 @@ function renderMP(){
   var dDiff=GActD-GRD,nDiff=GActN-GRN;
   h+='</tbody><tfoot>';
   // Row 1 — Day shift summary
+  // Cols: Dept(1) + ReqDay(1) + ReqNight(1) + Yogi×2 + Para×2 + Gujarat×2 + Yash×1 = 9 data cols
   h+='<tr style="background:rgba(78,158,255,0.06);">';
   h+='<td class="dn" style="color:#4e9eff;font-size:11px;font-weight:600;">Day Shift Total</td>';
-  h+='<td class="rc" style="color:#4e9eff;font-size:11px;">'+GRD+'</td>';
-  for(var ci=0;ci<16;ci++) h+='<td style="font-size:10px;color:var(--text3);">—</td>';
+  h+='<td class="rc" style="color:#4e9eff;font-size:11px;background:rgba(50,60,80,0.3);">'+GRD+'</td>';
+  h+='<td style="font-size:10px;color:var(--text3);background:rgba(50,60,80,0.3);">—</td>';
+  for(var ci=0;ci<7;ci++) h+='<td style="font-size:10px;color:var(--text3);">—</td>';
   h+='<td class="tc" style="color:#4e9eff;font-weight:600;" id="mg_day_tot">'+GActD+'</td>';
   h+='<td class="rc" style="color:#4e9eff;">'+GRD+'</td>';
   h+='<td class="'+(dDiff>=0?'dp':'dn2')+'" id="mg_day_dif">'+dDiff+'</td>';
@@ -4100,8 +4097,9 @@ function renderMP(){
   // Row 2 — Night shift summary
   h+='<tr style="background:rgba(192,132,252,0.06);">';
   h+='<td class="dn" style="color:#c084fc;font-size:11px;font-weight:600;">Night Shift Total</td>';
-  h+='<td class="rc" style="color:#c084fc;font-size:11px;">'+GRN+'</td>';
-  for(var ci2=0;ci2<16;ci2++) h+='<td style="font-size:10px;color:var(--text3);">—</td>';
+  h+='<td style="font-size:10px;color:var(--text3);background:rgba(50,60,80,0.3);">—</td>';
+  h+='<td class="rc" style="color:#c084fc;font-size:11px;background:rgba(50,60,80,0.3);">'+GRN+'</td>';
+  for(var ci2=0;ci2<7;ci2++) h+='<td style="font-size:10px;color:var(--text3);">—</td>';
   h+='<td class="tc" style="color:#c084fc;font-weight:600;" id="mg_night_tot">'+GActN+'</td>';
   h+='<td class="rc" style="color:#c084fc;">'+GRN+'</td>';
   h+='<td class="'+(nDiff>=0?'dp':'dn2')+'" id="mg_night_dif">'+nDiff+'</td>';
@@ -4109,8 +4107,9 @@ function renderMP(){
   // Row 3 — Grand total combined
   h+='<tr class="gt" style="background:rgba(192,132,252,0.12);">';
   h+='<td class="dn" style="color:#c084fc;font-weight:700;font-size:13px;">Grand Total (All Shifts)</td>';
-  h+='<td class="rc" style="color:#c084fc;font-weight:700;font-size:13px;">'+GReq+'</td>';
-  for(var ci3=0;ci3<16;ci3++) h+='<td></td>';
+  h+='<td class="rc" style="color:#c084fc;font-weight:700;font-size:13px;background:rgba(50,60,80,0.3);">'+GRD+'</td>';
+  h+='<td class="rc" style="color:#c084fc;font-weight:700;font-size:13px;background:rgba(50,60,80,0.3);">'+GRN+'</td>';
+  for(var ci3=0;ci3<7;ci3++) h+='<td></td>';
   h+='<td class="tc" style="font-weight:700;font-size:14px;color:#e8eaf0;" id="mg_tot">'+GAct+'</td>';
   h+='<td class="rc" style="font-weight:700;font-size:14px;color:#c084fc;">'+GReq+'</td>';
   h+='<td class="'+gdc+'" style="font-weight:700;font-size:14px;" id="mg_dif">'+GDiff+'</td>';
@@ -4238,6 +4237,43 @@ function lrqNew(inp){
   if(!reqs[dept])reqs[dept]=JSON.parse(JSON.stringify(MPR0[dept]||{yogi:{day:0,night:0},paramount:{day:0,night:0},gujarat:{day:0,night:0},yash:{day:0,night:0}}));
   if(!reqs[dept][con])reqs[dept][con]={day:0,night:0};
   if(isNight){reqs[dept][con].night=val;}else{reqs[dept][con].day=val;}
+  setMR(reqs);
+  updMP2();
+}
+
+function lrqTotal(inp){
+  // inp.id format: rqtd_deptkey (day) OR rqtn_deptkey (night)
+  var id=inp.id;
+  var isNight=id.startsWith('rqtn_');
+  var dkeyPart=id.replace('rqtd_','').replace('rqtn_','');
+  var dept=MPD.find(function(d){return dk(d)===dkeyPart;})||dkeyPart;
+  var newTotal=parseInt(inp.value)||0;
+  var reqs=getMR();
+  if(!reqs[dept])reqs[dept]=JSON.parse(JSON.stringify(MPR0[dept]||{yogi:{day:0,night:0},paramount:{day:0,night:0},gujarat:{day:0,night:0},yash:{day:0,night:0}}));
+  // Get current total across all contractors for this shift
+  var cons=['yogi','paramount','gujarat','yash'];
+  var shift=isNight?'night':'day';
+  var oldTotal=cons.reduce(function(s,c){return s+(reqs[dept][c]?reqs[dept][c][shift]||0:0);},0);
+  if(oldTotal===0){
+    // No existing split — put all in yogi (first contractor)
+    cons.forEach(function(c){if(!reqs[dept][c])reqs[dept][c]={day:0,night:0};reqs[dept][c][shift]=0;});
+    reqs[dept]['yogi'][shift]=newTotal;
+  } else {
+    // Proportionally distribute the new total across existing contractors
+    var scale=newTotal/oldTotal;
+    var distributed=0;
+    cons.forEach(function(c,i){
+      if(!reqs[dept][c])reqs[dept][c]={day:0,night:0};
+      if(i<cons.length-1){
+        var v=Math.round((reqs[dept][c][shift]||0)*scale);
+        reqs[dept][c][shift]=v;
+        distributed+=v;
+      } else {
+        // Last contractor gets remainder to avoid rounding errors
+        reqs[dept][c][shift]=newTotal-distributed;
+      }
+    });
+  }
   setMR(reqs);
   updMP2();
 }
