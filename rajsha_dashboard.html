@@ -1074,7 +1074,7 @@ var DEPTS=[
   {id:'formaldehyde',name:'Formaldehyde Plant',acc:'#f97316',isFHD:true,
     kpis:[{lb:'Production today',v:'—',u:'MT',tr:'good',t:'Fill EOD data below'},{lb:'Plant status',v:'—',u:'',tr:'good',t:'Submit EOD to update'},{lb:'Methanol consumed',v:'—',u:'kg',tr:'warn',t:'Update in form below'},{lb:'Catalyst condition',v:'—',u:'',tr:'good',t:'Submit EOD to update'}],
     alerts:[{tp:'green',m:'Formaldehyde plant operational — fill EOD report below'},{tp:'amber',m:'Submit daily data before 6:00 PM'},{tp:'green',m:'Senior management will view submitted data'}],
-    sm:[{n:'FD Production',v:'—'},{n:'FD Dispatch',v:'—'},{n:'FD Closing Stock',v:'—'},{n:'Methanol Used',v:'—'},{n:'Methanol Closing',v:'—'},{n:'Ratio (FD/Methanol)',v:'—'},{n:'WFD Opening',v:'—'},{n:'WFD From Dist.',v:'—'},{n:'WFD Used',v:'—'},{n:'WFD Closing',v:'—'},{n:'Boiler Steam',v:'—'},{n:'Electricity',v:'—'},{n:'RO Water',v:'—'},{n:'Submitted by',v:'—'}],ss:'warn'},
+    sm:[{n:'FD Opening',v:'—'},{n:'FD Production',v:'—'},{n:'FD Dispatch',v:'—'},{n:'FD Closing Stock',v:'—'},{n:'Methanol Used',v:'—'},{n:'Methanol Closing',v:'—'},{n:'Ratio (FD/Methanol)',v:'—'},{n:'WFD Opening',v:'—'},{n:'WFD From Dist.',v:'—'},{n:'WFD Used',v:'—'},{n:'WFD Closing',v:'—'},{n:'Boiler Steam',v:'—'},{n:'Electricity',v:'—'},{n:'RO Water',v:'—'},{n:'Submitted by',v:'—'}],ss:'warn'},
   {id:'firepump',name:'Safety',acc:'#ff6b35',isFP:true,
     kpis:[{lb:'Tank-01 level',v:'3.5',u:'m (max 3.7)',tr:'good',t:'Within safe limit'},{lb:'Fire pump mood',v:'Auto',u:'',tr:'good',t:'System on automatic'},{lb:'Diesel pump',v:'Running',u:'',tr:'good',t:'R — operational'},{lb:'Power connection',v:'Connected',u:'',tr:'good',t:'DG + Electricity OK'}],
     alerts:[{tp:'green',m:'All fire pumps running — system on Auto mode'},{tp:'green',m:'Diesel level Full — housekeeping OK'},{tp:'amber',m:'Tank-03 level slightly lower — monitor daily'}],
@@ -1798,8 +1798,8 @@ function subFHD(){
     d.kpis[1].v=row.fa_close||'—';d.kpis[1].u='MT';d.kpis[1].lb='FD closing stock';d.kpis[1].t='Closing stock today';
     d.kpis[2].v=row.me_consumption||'—';d.kpis[2].u='MT';d.kpis[2].t='Methanol consumed today';
     d.kpis[3].v=ratio;d.kpis[3].u='';d.kpis[3].lb='Ratio (FA/Methanol)';d.kpis[3].t='Production efficiency ratio';
-    d.sm[0].v=(row.fa_prod||'—')+' MT';d.sm[1].v=(row.fa_close||'—')+' MT';
-    d.sm[2].v=(row.me_consumption||'—')+' MT';d.sm[3].v='Ratio: '+ratio;
+    d.sm[0].v=(row.fa_open||'—')+' MT';d.sm[1].v=(row.fa_prod||'—')+' MT';d.sm[2].v=(row.fa_close||'—')+' MT';
+    d.sm[3].v=(row.me_consumption||'—')+' MT';d.sm[4].v='Ratio: '+ratio;
     d.ss='good';
   }
   SD['formaldehyde']={submitted:true,date:row.date,prod:row.fa_prod,ratio:ratio};
@@ -13132,10 +13132,13 @@ function buildSmFromSD(d){
     var fr=fl[0];
     if(fr.key&&fr.key!==todayKey) return null;
     return [
+      {n:'FD Opening',v:(fr.fa_open||'—')+' MT'},
       {n:'FD Production',v:(fr.fa_prod||'—')+' MT'},
       {n:'FD Dispatch',v:(fr.fa_dispatch||'—')+' MT'},
       {n:'FD Internal Transfer',v:(fr.fa_transfer?String(fr.fa_transfer)+' MT':'—')},
       {n:'FD Closing Stock',v:(fr.fa_close||'—')+' MT'},
+      {n:'__header__',v:'Methanol'},
+      {n:'Methanol Opening',v:(fr.me_open||'—')+' MT'},
       {n:'Methanol Used',v:(fr.me_consumption||'—')+' MT'},
       {n:'Methanol Closing',v:(fr.me_close||'—')+' MT'},
       {n:'Ratio (FD/Methanol)',v:fr.ratio||'—'},
@@ -13496,7 +13499,9 @@ function buildSmFromLive(d,liveD){
     // v5.3: Checked By and Remarks (visible in Google Sheet, missing from senior view)
     var checkedBy=liveD['Checked By']||'—';
     var remarks=liveD['Remarks']||'—';
+    var faOpen=liveD['FA Opening Stock(MT)']||liveD['FA Opening (MT)']||liveD['FA Opening Stock (MT)']||'—';
     return [
+      {n:'FD Opening',v:String(faOpen)+' MT'},
       {n:'FD Production',v:String(faProd)+' MT'},
       {n:'FD Dispatch',v:String(faDispatch)+' MT'},
       {n:'FD Internal Transfer',v:(liveD['FA Transfer (MT)']||liveD['FA Internal Transfer(MT)']||liveD['FD Internal Transfer(MT)']||'—')+' MT'},
