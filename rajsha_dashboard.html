@@ -1142,7 +1142,7 @@ var FG_PLANTS = [
 function fgProdKey(plantKey, idx){return plantKey+'_'+idx;}
 
 // ── MANPOWER REQUIREMENTS (from Excel — Yogi sheet + Para sheet) ──
-var MPD=['Plant 1','Plant 2','Plant 3','Plant 4','Plant 5 HM 100','Plant 5 Wax','Plant 5 Boiler','Blender','ETP','Store','Maintenance','TFH','Lab','Office Boy','Cleaning','RSA','General','Formaldehyde','Security','Housekeeping','EHS','Electrical','Extra'];
+var MPD=['Plant 1','Plant 2','Plant 3','Plant 4','Plant 5 HM 100','Plant 5 Wax','Plant 5 Boiler','Blender','ETP','Store','Maintenance','TFH','Lab','Office Boy','Cleaning','RSA','General','Formaldehyde','Security','Housekeeping','EHS','Electrical','Packing','Extra'];
 
 var MPR0={
   'Plant 1':       {yogi:{day:0, night:0}, paramount:{day:0, night:0}, gujarat:{day:0,night:0},yash:{day:0,night:0}},
@@ -1167,6 +1167,7 @@ var MPR0={
   'Housekeeping':  {yogi:{day:0, night:0}, paramount:{day:0, night:0}, gujarat:{day:0,night:0},yash:{day:4,night:0}},
   'EHS':           {yogi:{day:0, night:0}, paramount:{day:1, night:0}, gujarat:{day:0,night:0},yash:{day:0,night:0}},
   'Electrical':    {yogi:{day:0, night:0}, paramount:{day:1, night:0}, gujarat:{day:0,night:0},yash:{day:0,night:0}},
+  'Packing':       {yogi:{day:0, night:0}, paramount:{day:0, night:0}, gujarat:{day:0,night:0},yash:{day:0,night:0}},
   'Extra':         {yogi:{day:0, night:0}, paramount:{day:0, night:0}, gujarat:{day:0,night:0},yash:{day:0,night:0}}
 };
 function getMR(){return SD['mp_reqs']||JSON.parse(JSON.stringify(MPR0));}
